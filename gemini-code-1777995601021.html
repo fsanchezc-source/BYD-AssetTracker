@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+        }
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 15px;
+        }
+        .page-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(30, 60, 114, 0.15);
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border: none;
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        .card-custom {
+            background: white;
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        .card-custom .card-header {
+            background: transparent;
+            border-bottom: 1px solid #edf2f9;
+            padding: 20px 24px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .card-custom .card-body {
+            padding: 24px;
+        }
+        .table-responsive {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .table-custom {
+            margin-bottom: 0;
+        }
+        .table-custom th {
+            background-color: #f8fafd;
+            color: #7c8ba1;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            padding: 16px;
+            border-bottom: 1px solid #edf2f9;
+        }
+        .table-custom td {
+            padding: 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid #edf2f9;
+            font-size: 0.9rem;
+        }
+        .badge-custom {
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+        .code-sn {
+            font-family: monospace;
+            background-color: #f1f3f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #d63384;
+            font-size: 0.85rem;
+        }
+        .nav-pills .nav-link {
+            color: #495057;
+            font-weight: 500;
+            border-radius: 8px;
+            padding: 10px 20px;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #1e3c72;
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading" class="loading-overlay">
+        <div class="spinner-border text-primary mb-2" role="status"></div>
+        <div class="fw-bold text-secondary">Synchronizing Fleet with Google Sheets...</div>
+    </div>
+
+    <div class="main-container">
+        <div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <h1 class="fw-bold mb-1"><i class="fa-solid fa-boxes-stacked me-2"></i>Asset Management Tracker</h1>
+                <p class="mb-0 text-white-50">Fleet monitoring portal powered by Netlify & Google Sheets API</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-light fw-semibold" onclick="fetchDataViaJSONP()">
+                    <i class="fa-solid fa-sync me-2 text-success"></i>Refresh Data
+                </button>
+                <button class="btn btn-success fw-semibold" onclick="exportToCSV()">
+                    <i class="fa-solid fa-file-csv me-2"></i>Export View
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary-subtle text-primary"><i class="fa-solid fa-users"></i></div>
+                    <h6 class="text-muted mb-1 text-uppercase font-size-sm">Active Employees</h6>
+                    <h3 class="fw-bold mb-0" id="stat-activos">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-success-subtle text-success"><i class="fa-solid fa-warehouse"></i></div>
+                    <h6 class="text-muted mb-1 text-uppercase font-size-sm">In Deposit (Available)</h6>
+                    <h3 class="fw-bold mb-0" id="stat-deposito">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-danger-subtle text-danger"><i class="fa-solid fa-heart-crack"></i></div>
+                    <h6 class="text-muted mb-1 text-uppercase font-size-sm">Broken / Damaged</h6>
+                    <h3 class="fw-bold mb-0" id="stat-rotos">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-info-subtle text-info"><i class="fa-solid fa-laptop"></i></div>
+                    <h6 class="text-muted mb-1 text-uppercase font-size-sm">Total Fleet Units</h6>
+                    <h3 class="fw-bold mb-0" id="stat-total">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card card-custom">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Onboarding & Intake</span>
+                        <ul class="nav nav-pills card-header-pills" id="pills-tab" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active py-1 px-3" id="tab-emp" data-bs-toggle="pill" data-bs-target="#panel-emp" type="button">New Employee</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link py-1 px-3" id="tab-dev" data-bs-toggle="pill" data-bs-target="#panel-dev" type="button">New Device</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="pills-tabContent">
+                            <div class="tab-pane fade show active" id="panel-emp" role="tabpanel">
+                                <form id="form-empleado" onsubmit="addEmployee(event)">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-medium">Full Name</label>
+                                        <input type="text" id="emp-nombre" class="form-control" required placeholder="e.g. John Doe">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-medium">BYD Email Address</label>
+                                        <input type="email" id="emp-email" class="form-control" required placeholder="example@byd.com">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 fw-semibold">Register Employee</button>
+                                </form>
+                            </div>
+                            <div class="tab-pane fade" id="panel-dev" role="tabpanel">
+                                <form id="form-dispositivo" onsubmit="addDevice(event)">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-medium">Serial Number (S/N)</label>
+                                        <input type="text" id="dev-sn" class="form-control" required placeholder="e.g. GM129EKX">
+                                    </div>
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-medium">Device Type</label>
+                                            <select id="dev-type" class="form-select">
+                                                <option value="DESKTOP">DESKTOP</option>
+                                                <option value="LAPTOP">LAPTOP</option>
+                                                <option value="SCREEN">SCREEN</option>
+                                                <option value="HEADSET">HEADSET</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-medium">Storage Status Target</label>
+                                            <select id="dev-status" class="form-select">
+                                                <option value="DEPOSIT">DEPOSIT (Available Stock)</option>
+                                                <option value="BROKEN">BROKEN (Damaged Stock)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 fw-semibold">Intake Hardware Component</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card card-custom">
+                    <div class="card-header">
+                        <i class="fa-solid fa-shuffle me-2 text-warning"></i>Hardware Reassignment Matrix
+                    </div>
+                    <div class="card-body">
+                        <form onsubmit="reassignDevice(event)">
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Source Pool (User Account or Available Item)</label>
+                                <select id="re-origen" class="form-select" onchange="updateAvailableComponents()" required>
+                                    <option value="">-- Select Source Pool Owner --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Specific Component Serial to Reallocate</label>
+                                <select id="re-asset" class="form-select" required>
+                                    <option value="">-- Select Target Serial Number --</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Destination Target Allocation</label>
+                                <select id="re-destino" class="form-select" required>
+                                    <option value="">-- Select Target Destination Pool --</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-warning w-100 fw-semibold text-dark">Process Hardware Reallocation</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-custom">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fa-solid fa-list me-2 text-secondary"></i>General Hardware Fleet Inventory</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover align-middle" id="tabla-assets">
+                        <thead>
+                            <tr>
+                                <th>User / Context Location</th>
+                                <th>Email</th>
+                                <th>Main Unit S/N</th>
+                                <th>Type</th>
+                                <th>Screen 1 S/N</th>
+                                <th>Screen 2 S/N</th>
+                                <th>Headset S/N</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzQBdGpe1o2g6WklMi-SskkFDeRqZ8bmwNznp0tlv2nR3SuXnYSQsWaGTwDxpOzCzw/exec";
+        let assets = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchDataViaJSONP();
+        });
+
+        function toggleLoading(show) {
+            document.getElementById('loading').style.display = show ? 'flex' : 'none';
+        }
+
+        // ── NETLIFY / CORS COMPATIBLE READ via JSONP ──
+        function fetchDataViaJSONP() {
+            toggleLoading(true);
+            
+            // Remove previous instances of the tag to avoid polluting DOM
+            const existingScript = document.getElementById('jsonp-script');
+            if (existingScript) existingScript.remove();
+
+            const script = document.createElement('script');
+            script.id = 'jsonp-script';
+            // Passing the execution callback route parameter
+            script.src = `${APPS_SCRIPT_URL}?callback=handleSheetsResponse&_=${new Date().getTime()}`;
+            
+            script.onerror = () => {
+                console.error("JSONP Injection architecture encountered a structural handshake error.");
+                toggleLoading(false);
+                alert("Failed to reach Google Sheets API. Double check your Apps Script deployment configuration.");
+            };
+            
+            document.body.appendChild(script);
+        }
+
+        // Target matching callback listener executed by the incoming script
+        window.handleSheetsResponse = function(data) {
+            toggleLoading(false);
+            if (Array.isArray(data) && data.length > 0) {
+                assets = data;
+                localStorage.setItem('byd_assets_tracker_netlify', JSON.stringify(assets));
+                renderApp();
+            } else {
+                console.warn("API parsed payload was empty.");
+            }
+        };
+
+        // ── NETLIFY / CORS COMPATIBLE WRITE via Parameterized URL Queries ──
+        async function updateUpstreamSheet(parameters) {
+            toggleLoading(true);
+            try {
+                const queryParameters = new URLSearchParams(parameters).toString();
+                
+                // Fetch using 'no-cors' mode acts as an isolated ping that drops response isolation, bypassing browser blocks.
+                await fetch(`${APPS_SCRIPT_URL}?${queryParameters}`, {
+                    method: "GET",
+                    mode: "no-cors",
+                    cache: "no-cache"
+                });
+
+                // Polling synchronization validation pass
+                setTimeout(fetchDataViaJSONP, 1200);
+            } catch (error) {
+                console.error("Upstream deployment pipeline pipeline failed:", error);
+                toggleLoading(false);
+            }
+        }
+
+        function renderApp() {
+            renderTable();
+            renderDropdowns();
+            calculateMetrics();
+        }
+
+        function renderTable() {
+            const tbody = document.querySelector('#tabla-assets tbody');
+            tbody.innerHTML = '';
+
+            if (assets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>No records found. Synchronize database.</td></tr>';
+                return;
+            }
+
+            assets.forEach(asset => {
+                const tr = document.createElement('tr');
+                
+                let nameDisplay = `<strong>${asset.name}</strong>`;
+                if (asset.name === 'DEPOSIT') nameDisplay = `<span class="badge bg-success-subtle text-success badge-custom"><i class="fa-solid fa-warehouse me-1"></i>DEPOSIT</span>`;
+                if (asset.name === 'OFFICE' && asset.mail === 'BROKEN') nameDisplay = `<span class="badge bg-danger-subtle text-danger badge-custom"><i class="fa-solid fa-heart-crack me-1"></i>BROKEN</span>`;
+                if (asset.name === 'OFFICE' && asset.mail === 'UNASSIGNED') nameDisplay = `<span class="badge bg-info-subtle text-info badge-custom"><i class="fa-solid fa-building me-1"></i>OFFICE STOCK</span>`;
+
+                tr.innerHTML = `
+                    <td>${nameDisplay}</td>
+                    <td class="text-muted">${asset.mail || '-'}</td>
+                    <td>${asset.sn && asset.sn !== 'SIN ASIGNAR' && asset.sn !== 'UNASSIGNED' ? `<span class="code-sn">${asset.sn}</span>` : '<span class="text-black-50">-</span>'}</td>
+                    <td><small class="fw-semibold text-secondary">${asset.type && asset.type !== '-' ? asset.type : '-'}</small></td>
+                    <td>${asset.s1 ? `<span class="code-sn">${asset.s1}</span>` : '<span class="text-black-50">-</span>'}</td>
+                    <td>${asset.s2 ? `<span class="code-sn">${asset.s2}</span>` : '<span class="text-black-50">-</span>'}</td>
+                    <td>${asset.headset ? `<span class="code-sn">${asset.headset}</span>` : '<span class="text-black-50">-</span>'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function calculateMetrics() {
+            let active = 0; let deposit = 0; let broken = 0; let itemsCount = 0;
+
+            assets.forEach(a => {
+                if (a.mail === 'UNASSIGNED') {
+                    deposit++; itemsCount++;
+                } else if (a.mail === 'BROKEN') {
+                    broken++; itemsCount++;
+                } else {
+                    active++;
+                    if (a.sn && a.sn !== 'SIN ASIGNAR' && a.sn !== 'UNASSIGNED') itemsCount++;
+                    if (a.s1) itemsCount++; if (a.s2) itemsCount++; if (a.headset) itemsCount++;
+                }
+            });
+
+            document.getElementById('stat-activos').innerText = active;
+            document.getElementById('stat-deposito').innerText = deposit;
+            document.getElementById('stat-rotos').innerText = broken;
+            document.getElementById('stat-total').innerText = itemsCount;
+        }
+
+        function renderDropdowns() {
+            const origenSelect = document.getElementById('re-origen');
+            const destinoSelect = document.getElementById('re-destino');
+            
+            const prevOrigen = origenSelect.value;
+            const prevDestino = destinoSelect.value;
+
+            origenSelect.innerHTML = '<option value="">-- Select Source Component Owner --</option>';
+            destinoSelect.innerHTML = '<option value="">-- Select Destination Allocation Target --</option>';
+
+            destinoSelect.innerHTML += `<option value="GLOBAL_DEPOSIT">Move to DEPOSIT (Available Stock Pool)</option>`;
+            destinoSelect.innerHTML += `<option value="GLOBAL_BROKEN">Move to BROKEN (Decommissioned Pool)</option>`;
+
+            const trackingMails = new Set();
+
+            assets.forEach(asset => {
+                if (asset.sn && asset.sn !== 'SIN ASIGNAR' && asset.sn !== '' && asset.sn !== 'UNASSIGNED') {
+                    if (asset.mail === 'UNASSIGNED' || asset.mail === 'BROKEN') {
+                        origenSelect.innerHTML += `<option value="${asset.sn}">[Stock Storage] S/N: ${asset.sn} (${asset.name})</option>`;
+                    } else if (!trackingMails.has(asset.mail)) {
+                        trackingMails.add(asset.mail);
+                        origenSelect.innerHTML += `<option value="${asset.mail}">${asset.name} (${asset.mail})</option>`;
+                    }
+                }
+                
+                if (asset.mail !== 'UNASSIGNED' && asset.mail !== 'BROKEN' && asset.mail) {
+                    if (!destinoSelect.innerHTML.includes(asset.mail)) {
+                        destinoSelect.innerHTML += `<option value="${asset.mail}">${asset.name} (${asset.mail})</option>`;
+                    }
+                }
+            });
+
+            origenSelect.value = prevOrigen;
+            destinoSelect.value = prevDestino;
+        }
+
+        function updateAvailableComponents() {
+            const origen = document.getElementById('re-origen').value;
+            const assetSelect = document.getElementById('re-asset');
+            assetSelect.innerHTML = '<option value="">-- Select Target Hardware Component --</option>';
+
+            if (!origen) return;
+
+            const dispositivoDirecto = assets.find(a => a.sn === origen && (a.mail === 'UNASSIGNED' || a.mail === 'BROKEN'));
+            
+            if (dispositivoDirecto) {
+                assetSelect.innerHTML += `<option value="${dispositivoDirecto.sn}">${dispositivoDirecto.type || 'UNIT'} - S/N: ${dispositivoDirecto.sn}</option>`;
+            } else {
+                assets.forEach(a => {
+                    if (a.mail === origen) {
+                        if (a.sn && a.sn !== 'SIN ASIGNAR' && a.sn !== 'UNASSIGNED') assetSelect.innerHTML += `<option value="${a.sn}">Main Box - S/N: ${a.sn}</option>`;
+                        if (a.s1) assetSelect.innerHTML += `<option value="${a.s1}">Screen 1 - S/N: ${a.s1}</option>`;
+                        if (a.s2) assetSelect.innerHTML += `<option value="${a.s2}">Screen 2 - S/N: ${a.s2}</option>`;
+                        if (a.headset) assetSelect.innerHTML += `<option value="${a.headset}">Headset - S/N: ${a.headset}</option>`;
+                    }
+                });
+            }
+        }
+
+        function addEmployee(e) {
+            e.preventDefault();
+            const name = document.getElementById('emp-nombre').value.trim();
+            const email = document.getElementById('emp-email').value.trim();
+
+            if (assets.some(a => a.mail && a.mail.toLowerCase() === email.toLowerCase() && email.toLowerCase() !== 'unassigned' && email.toLowerCase() !== 'broken')) {
+                alert('This user is already mapped inside the inventory.'); return;
+            }
+
+            updateUpstreamSheet({
+                action: "NEW_EMPLOYEE",
+                name: name,
+                mail: email
+            });
+            e.target.reset();
+        }
+
+        function addDevice(e) {
+            e.preventDefault();
+            const sn = document.getElementById('dev-sn').value.trim();
+            const type = document.getElementById('dev-type').value;
+            const status = document.getElementById('dev-status').value;
+
+            if (assets.some(a => (a.sn === sn || a.s1 === sn || a.s2 === sn || a.headset === sn) && sn !== '')) {
+                alert('This serial number is already allocated to a device.'); return;
+            }
+
+            updateUpstreamSheet({
+                action: "NEW_DEVICE",
+                sn: sn,
+                type: type,
+                status: status
+            });
+            e.target.reset();
+        }
+
+        function reassignDevice(e) {
+            e.preventDefault();
+            const source = document.getElementById('re-origen').value;
+            const itemSN = document.getElementById('re-asset').value;
+            const destination = document.getElementById('re-destino').value;
+
+            if (!itemSN) return;
+
+            let subComponentType = 'PC'; 
+            for (let i = 0; i < assets.length; i++) {
+                if (assets[i].sn === itemSN) { subComponentType = 'PC'; break; }
+                if (assets[i].s1 === itemSN) { subComponentType = 'S1'; break; }
+                if (assets[i].s2 === itemSN) { subComponentType = 'S2'; break; }
+                if (assets[i].headset === itemSN) { subComponentType = 'HEADSET'; break; }
+            }
+
+            updateUpstreamSheet({
+                action: "REASSIGNMENT",
+                source: source,
+                destination: destination,
+                sn: itemSN,
+                type: subComponentType
+            });
+            
+            document.getElementById('re-origen').value = '';
+            document.getElementById('re-asset').innerHTML = '<option value="">-- Select Target Hardware Component --</option>';
+        }
+
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Name,BYD Mail,S/N,Type,Screen 1,Screen 2,Headset\n";
+            assets.forEach(a => {
+                csvContent += `"${a.name || ''}","${a.mail || ''}","${a.sn || ''}","${a.type || ''}","${a.s1 || ''}","${a.s2 || ''}","${a.headset || ''}"\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Asset_Fleet_Matrix.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
