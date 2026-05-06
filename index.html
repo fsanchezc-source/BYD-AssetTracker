@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -148,20 +148,8 @@
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">🚗 BYD</div>
-    <div class="login-title">Asset Tracker</div>
-    <div class="login-sub">Enter the team password to continue</div>
-    <input type="password" id="passwordInput" class="login-input" placeholder="Password" />
-    <button class="login-btn" id="loginBtn">Enter</button>
-    <div class="login-error" id="loginError">Incorrect password. Try again.</div>
-  </div>
-</div>
-
 <!-- APP -->
-<div class="app" id="appShell" style="display:none">
+<div class="app" id="appShell">
 
   <header class="hero">
     <div class="hero-top">
@@ -341,25 +329,8 @@
   let assignDeviceId = null;
   let selectedEmpEmail = null;
 
-  // ── LOGIN ──
-  function checkLogin() {
-    if (document.getElementById('passwordInput').value === PASSWORD) {
-      sessionStorage.setItem('byd_asset_auth','1');
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('appShell').style.display = 'block';
-      loadData();
-    } else {
-      document.getElementById('loginError').style.display = 'block';
-      document.getElementById('passwordInput').value = '';
-    }
-  }
-  document.getElementById('loginBtn').addEventListener('click', checkLogin);
-  document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key==='Enter') checkLogin(); });
-  if (sessionStorage.getItem('byd_asset_auth')==='1') {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('appShell').style.display = 'block';
-    loadData();
-  }
+  // ── INIT ──
+  loadData();
 
   // ── STATUS ──
   function setStatus(type, text) {
