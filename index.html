@@ -1,566 +1,750 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asset Tracker</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BYD Asset Tracker</title>
+  <style>
+    :root {
+      --byd-orange: #f58220; --byd-orange-dark: #d96810; --byd-orange-soft: rgba(245,130,32,0.12);
+      --byd-grey: #6c727a; --byd-dark: #1f2328; --byd-text: #2b3137; --bg: #f4f6f8;
+      --line: #e4e8ee; --shadow: 0 14px 30px rgba(31,35,40,0.08);
+      --radius-xl: 26px; --radius-lg: 18px; --radius-sm: 8px;
+      --green: #22c55e; --green-soft: rgba(34,197,94,0.12);
+      --red: #ef4444; --red-soft: rgba(239,68,68,0.12);
+      --blue: #3b82f6; --blue-soft: rgba(59,130,246,0.12);
+      --purple: #7c3aed; --purple-soft: rgba(124,58,237,0.10);
+      --yellow: #f59e0b; --yellow-soft: rgba(245,158,11,0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Segoe UI", sans-serif; background: var(--bg); color: var(--byd-text); padding: 28px; }
+    .app { max-width: 1500px; margin: 0 auto; }
 
-    <style>
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: #f4f7fc;
-            color: #333;
-        }
-        .main-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 30px 15px;
-        }
-        .page-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(30, 60, 114, 0.15);
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            border: none;
-            transition: transform 0.3s ease;
-            height: 100%;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            margin-bottom: 15px;
-        }
-        .card-custom {
-            background: white;
-            border-radius: 16px;
-            border: none;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            margin-bottom: 30px;
-        }
-        .card-custom .card-header {
-            background: transparent;
-            border-bottom: 1px solid #edf2f9;
-            padding: 20px 24px;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-        .card-custom .card-body {
-            padding: 24px;
-        }
-        .table-responsive {
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .table-custom {
-            margin-bottom: 0;
-        }
-        .table-custom th {
-            background-color: #f8fafd;
-            color: #7c8ba1;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            padding: 16px;
-            border-bottom: 1px solid #edf2f9;
-        }
-        .table-custom td {
-            padding: 16px;
-            vertical-align: middle;
-            border-bottom: 1px solid #edf2f9;
-            font-size: 0.9rem;
-        }
-        .badge-custom {
-            padding: 6px 12px;
-            border-radius: 30px;
-            font-weight: 500;
-            font-size: 0.75rem;
-        }
-        .code-sn {
-            font-family: monospace;
-            background-color: #f1f3f5;
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: #d63384;
-            font-size: 0.85rem;
-        }
-        .nav-pills .nav-link {
-            color: #495057;
-            font-weight: 500;
-            border-radius: 8px;
-            padding: 10px 20px;
-        }
-        .nav-pills .nav-link.active {
-            background-color: #1e3c72;
-        }
-        .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.8);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-    </style>
+    /* LOGIN */
+    #loginScreen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 999; }
+    .login-box { background: white; border-radius: var(--radius-xl); border: 1px solid var(--line); padding: 40px; width: 100%; max-width: 380px; box-shadow: var(--shadow); text-align: center; }
+    .login-logo { background: linear-gradient(135deg, var(--byd-orange), var(--byd-orange-dark)); color: white; font-size: 1.4rem; font-weight: 700; border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 24px; display: inline-block; }
+    .login-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; color: var(--byd-dark); }
+    .login-sub { font-size: 0.85rem; color: var(--byd-grey); margin-bottom: 24px; }
+    .login-input { width: 100%; border: 1.5px solid var(--line); border-radius: 12px; padding: 12px 16px; font-size: 1rem; outline: none; color: var(--byd-text); font-family: inherit; margin-bottom: 12px; transition: 0.2s; }
+    .login-input:focus { border-color: var(--byd-orange); }
+    .login-btn { width: 100%; background: linear-gradient(135deg, var(--byd-orange), var(--byd-orange-dark)); color: white; border: none; border-radius: 12px; padding: 13px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .login-error { color: var(--red); font-size: 0.83rem; margin-top: 10px; display: none; }
+
+    /* HERO */
+    .hero { background: linear-gradient(135deg, var(--byd-orange), var(--byd-orange-dark)); border-radius: var(--radius-xl); padding: 30px; color: white; margin-bottom: 20px; box-shadow: var(--shadow); }
+    .hero-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .hero h1 { font-size: 1.6rem; font-weight: 700; }
+    .hero p { opacity: 0.88; font-size: 0.92rem; margin-top: 4px; }
+    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* STATUS */
+    .status-bar { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 12px 18px; margin-bottom: 20px; font-size: 0.88rem; color: var(--byd-grey); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+    .status-dot.loading { background: var(--byd-orange); animation: pulse 1s infinite; }
+    .status-dot.ok { background: var(--green); }
+    .status-dot.error { background: var(--red); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .stat-card { background: white; border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 18px; text-align: center; }
+    .stat-num { font-size: 2rem; font-weight: 700; color: var(--byd-dark); line-height: 1; }
+    .stat-label { font-size: 0.75rem; color: var(--byd-grey); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card.orange .stat-num { color: var(--byd-orange); }
+    .stat-card.green .stat-num { color: var(--green); }
+    .stat-card.red .stat-num { color: var(--red); }
+    .stat-card.blue .stat-num { color: var(--blue); }
+    .stat-card.purple .stat-num { color: var(--purple); }
+
+    /* TABS */
+    .tabs { display: flex; gap: 6px; background: white; border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab { padding: 9px 18px; border-radius: 12px; border: none; background: none; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: var(--byd-grey); transition: 0.2s; font-family: inherit; }
+    .tab:hover { background: var(--bg); color: var(--byd-text); }
+    .tab.active { background: var(--byd-orange); color: white; }
+
+    /* TOOLBAR */
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .search-wrap { display: flex; align-items: center; gap: 8px; background: white; border: 1.5px solid var(--line); border-radius: 12px; padding: 9px 14px; flex: 1; min-width: 200px; transition: 0.2s; }
+    .search-wrap:focus-within { border-color: var(--byd-orange); }
+    .search-wrap input { border: none; outline: none; font-size: 0.9rem; color: var(--byd-text); font-family: inherit; flex: 1; background: none; }
+    .search-wrap input::placeholder { color: var(--byd-grey); }
+
+    /* TOGGLE VIEW */
+    .view-toggle { display: flex; gap: 4px; background: white; border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+    .view-btn { padding: 6px 14px; border-radius: 9px; border: none; background: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--byd-grey); font-family: inherit; transition: 0.2s; }
+    .view-btn.active { background: var(--byd-orange-soft); color: var(--byd-orange-dark); }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 99px; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: 0.2s; white-space: nowrap; }
+    .btn-primary { background: linear-gradient(135deg, var(--byd-orange), var(--byd-orange-dark)); color: white; }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-secondary { background: white; color: var(--byd-text); border: 1.5px solid var(--line); }
+    .btn-secondary:hover { border-color: var(--byd-orange); color: var(--byd-orange); }
+    .btn-green { background: var(--green-soft); color: var(--green); border: 1.5px solid rgba(34,197,94,0.3); }
+    .btn-green:hover { background: var(--green); color: white; }
+    .btn-red { background: var(--red-soft); color: var(--red); border: 1.5px solid rgba(239,68,68,0.3); }
+    .btn-red:hover { background: var(--red); color: white; }
+    .btn-sm { padding: 5px 12px; font-size: 0.78rem; }
+    .btn-white { background: rgba(255,255,255,0.2); color: white; border: 1.5px solid rgba(255,255,255,0.3); }
+    .btn-white:hover { background: rgba(255,255,255,0.35); }
+
+    /* TABLE */
+    .panel { background: white; border-radius: var(--radius-xl); border: 1px solid var(--line); overflow: hidden; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th { background: #f9fafb; padding: 12px 16px; text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--byd-grey); font-weight: 600; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--line); transition: 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafbfc; }
+    td { padding: 11px 16px; color: var(--byd-text); vertical-align: middle; }
+    .td-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* Employee group row */
+    .emp-group-header { background: #f9fafb !important; }
+    .emp-group-header td { padding: 10px 16px; font-weight: 600; font-size: 0.88rem; border-bottom: 1px solid var(--line); }
+    .emp-sub-row td:first-child { padding-left: 32px; }
+
+    /* BADGES */
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+    .badge-desktop { background: var(--blue-soft); color: var(--blue); }
+    .badge-laptop { background: var(--byd-orange-soft); color: var(--byd-orange-dark); }
+    .badge-screen { background: #e0f2fe; color: #0369a1; }
+    .badge-headset { background: var(--purple-soft); color: var(--purple); }
+    .badge-assigned { background: var(--green-soft); color: var(--green); }
+    .badge-free { background: var(--yellow-soft); color: var(--yellow); }
+    .badge-broken { background: var(--red-soft); color: var(--red); }
+
+    .sn-code { font-family: monospace; font-size: 0.82rem; background: var(--bg); padding: 2px 7px; border-radius: 5px; color: var(--byd-dark); }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--byd-orange-soft); color: var(--byd-orange-dark); display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+    .person-cell { display: flex; align-items: center; gap: 9px; }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(3px); }
+    .modal { background: white; border-radius: var(--radius-xl); padding: 32px; width: 100%; max-width: 520px; box-shadow: 0 30px 80px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+    .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--byd-dark); margin-bottom: 22px; display: flex; align-items: center; gap: 10px; }
+    .modal-icon { background: var(--byd-orange-soft); color: var(--byd-orange); width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .form-row { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--byd-grey); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .form-input, .form-select { width: 100%; border: 1.5px solid var(--line); border-radius: 12px; padding: 11px 14px; font-size: 0.92rem; outline: none; color: var(--byd-text); font-family: inherit; transition: 0.2s; background: white; }
+    .form-input:focus, .form-select:focus { border-color: var(--byd-orange); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end; }
+    .info-box { background: var(--bg); border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 0.88rem; line-height: 1.6; }
+
+    /* Employee picker in modal */
+    .emp-picker { max-height: 240px; overflow-y: auto; border: 1.5px solid var(--line); border-radius: 12px; }
+    .emp-picker-item { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); font-size: 0.88rem; transition: 0.15s; }
+    .emp-picker-item:last-child { border-bottom: none; }
+    .emp-picker-item:hover { background: var(--bg); }
+    .emp-picker-item.selected { background: var(--byd-orange-soft); }
+
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--byd-grey); }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.4; }
+
+    /* Type section header in by-device view */
+    .type-section-header { background: #f4f6f8; border-bottom: 1px solid var(--line); }
+    .type-section-header td { padding: 8px 16px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--byd-grey); }
+  </style>
 </head>
 <body>
 
-    <div id="loading" class="loading-overlay">
-        <div class="spinner-border text-primary mb-2" role="status"></div>
-        <div class="fw-bold text-secondary">Synchronizing Fleet with Google Sheets...</div>
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🚗 BYD</div>
+    <div class="login-title">Asset Tracker</div>
+    <div class="login-sub">Enter the team password to continue</div>
+    <input type="password" id="passwordInput" class="login-input" placeholder="Password" />
+    <button class="login-btn" id="loginBtn">Enter</button>
+    <div class="login-error" id="loginError">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appShell" style="display:none">
+
+  <header class="hero">
+    <div class="hero-top">
+      <div>
+        <h1>🖥️ BYD Asset Tracker</h1>
+        <p>Manage devices, employees and assignments.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-white" onclick="openModal('addEmployee')">＋ Employee</button>
+        <button class="btn btn-white" onclick="openModal('addDevice')">＋ Device</button>
+        <button class="btn btn-white" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
     </div>
+  </header>
 
-    <div class="main-container">
-        <div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-            <div>
-                <h1 class="fw-bold mb-1"><i class="fa-solid fa-boxes-stacked me-2"></i>Asset Management Tracker</h1>
-                <p class="mb-0 text-white-50">Fleet monitoring portal powered by Netlify & Google Sheets API</p>
-            </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-light fw-semibold" onclick="fetchDataViaJSONP()">
-                    <i class="fa-solid fa-sync me-2 text-success"></i>Refresh Data
-                </button>
-                <button class="btn btn-success fw-semibold" onclick="exportToCSV()">
-                    <i class="fa-solid fa-file-csv me-2"></i>Export View
-                </button>
-            </div>
-        </div>
+  <div class="status-bar">
+    <div class="status-dot loading" id="statusDot"></div>
+    <span id="statusText">Loading data...</span>
+  </div>
 
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon bg-primary-subtle text-primary"><i class="fa-solid fa-users"></i></div>
-                    <h6 class="text-muted mb-1 text-uppercase font-size-sm">Active Employees</h6>
-                    <h3 class="fw-bold mb-0" id="stat-activos">0</h3>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon bg-success-subtle text-success"><i class="fa-solid fa-warehouse"></i></div>
-                    <h6 class="text-muted mb-1 text-uppercase font-size-sm">In Deposit (Available)</h6>
-                    <h3 class="fw-bold mb-0" id="stat-deposito">0</h3>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon bg-danger-subtle text-danger"><i class="fa-solid fa-heart-crack"></i></div>
-                    <h6 class="text-muted mb-1 text-uppercase font-size-sm">Broken / Damaged</h6>
-                    <h3 class="fw-bold mb-0" id="stat-rotos">0</h3>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon bg-info-subtle text-info"><i class="fa-solid fa-laptop"></i></div>
-                    <h6 class="text-muted mb-1 text-uppercase font-size-sm">Total Fleet Units</h6>
-                    <h3 class="fw-bold mb-0" id="stat-total">0</h3>
-                </div>
-            </div>
-        </div>
+  <div class="stats-grid" id="statsGrid"></div>
 
-        <div class="row g-4">
-            <div class="col-lg-6">
-                <div class="card card-custom">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Onboarding & Intake</span>
-                        <ul class="nav nav-pills card-header-pills" id="pills-tab" role="tablist">
-                            <li class="nav-item">
-                                <button class="nav-link active py-1 px-3" id="tab-emp" data-bs-toggle="pill" data-bs-target="#panel-emp" type="button">New Employee</button>
-                            </li>
-                            <li class="nav-item">
-                                <button class="nav-link py-1 px-3" id="tab-dev" data-bs-toggle="pill" data-bs-target="#panel-dev" type="button">New Device</button>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="card-body">
-                        <div class="tab-content" id="pills-tabContent">
-                            <div class="tab-pane fade show active" id="panel-emp" role="tabpanel">
-                                <form id="form-empleado" onsubmit="addEmployee(event)">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-medium">Full Name</label>
-                                        <input type="text" id="emp-nombre" class="form-control" required placeholder="e.g. John Doe">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label fw-medium">BYD Email Address</label>
-                                        <input type="email" id="emp-email" class="form-control" required placeholder="example@byd.com">
-                                    </div>
-                                    <button type="submit" class="btn btn-primary w-100 fw-semibold">Register Employee</button>
-                                </form>
-                            </div>
-                            <div class="tab-pane fade" id="panel-dev" role="tabpanel">
-                                <form id="form-dispositivo" onsubmit="addDevice(event)">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-medium">Serial Number (S/N)</label>
-                                        <input type="text" id="dev-sn" class="form-control" required placeholder="e.g. GM129EKX">
-                                    </div>
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-medium">Device Type</label>
-                                            <select id="dev-type" class="form-select">
-                                                <option value="DESKTOP">DESKTOP</option>
-                                                <option value="LAPTOP">LAPTOP</option>
-                                                <option value="SCREEN">SCREEN</option>
-                                                <option value="HEADSET">HEADSET</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-medium">Storage Status Target</label>
-                                            <select id="dev-status" class="form-select">
-                                                <option value="DEPOSIT">DEPOSIT (Available Stock)</option>
-                                                <option value="BROKEN">BROKEN (Damaged Stock)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary w-100 fw-semibold">Intake Hardware Component</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('assigned', this)">👤 Assigned</button>
+    <button class="tab" onclick="setTab('free', this)">📦 Available Pool</button>
+    <button class="tab" onclick="setTab('broken', this)">🔧 Broken / Retired</button>
+    <button class="tab" onclick="setTab('employees', this)">👥 Employees</button>
+  </div>
 
-            <div class="col-lg-6">
-                <div class="card card-custom">
-                    <div class="card-header">
-                        <i class="fa-solid fa-shuffle me-2 text-warning"></i>Hardware Reassignment Matrix
-                    </div>
-                    <div class="card-body">
-                        <form onsubmit="reassignDevice(event)">
-                            <div class="mb-3">
-                                <label class="form-label fw-medium">Source Pool (User Account or Available Item)</label>
-                                <select id="re-origen" class="form-select" onchange="updateAvailableComponents()" required>
-                                    <option value="">-- Select Source Pool Owner --</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-medium">Specific Component Serial to Reallocate</label>
-                                <select id="re-asset" class="form-select" required>
-                                    <option value="">-- Select Target Serial Number --</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-medium">Destination Target Allocation</label>
-                                <select id="re-destino" class="form-select" required>
-                                    <option value="">-- Select Target Destination Pool --</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-warning w-100 fw-semibold text-dark">Process Hardware Reallocation</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card card-custom">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="fa-solid fa-list me-2 text-secondary"></i>General Hardware Fleet Inventory</span>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-custom table-hover align-middle" id="tabla-assets">
-                        <thead>
-                            <tr>
-                                <th>User / Context Location</th>
-                                <th>Email</th>
-                                <th>Main Unit S/N</th>
-                                <th>Type</th>
-                                <th>Screen 1 S/N</th>
-                                <th>Screen 2 S/N</th>
-                                <th>Headset S/N</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span style="color:var(--byd-grey)">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search by name, email, S/N...">
+      <button onclick="clearSearch()" style="border:none;background:none;cursor:pointer;color:var(--byd-grey);font-size:1rem;">✕</button>
     </div>
+    <div class="view-toggle" id="viewToggle" style="display:none">
+      <button class="view-btn active" id="vByEmp" onclick="setView('employee', this)">By Employee</button>
+      <button class="view-btn" id="vByDev" onclick="setView('device', this)">By Device Type</button>
+    </div>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <div class="panel">
+    <div class="table-wrap">
+      <div id="tableContainer"></div>
+    </div>
+  </div>
 
-    <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzQBdGpe1o2g6WklMi-SskkFDeRqZ8bmwNznp0tlv2nR3SuXnYSQsWaGTwDxpOzCzw/exec";
-        let assets = [];
+</div>
 
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchDataViaJSONP();
-        });
+<!-- MODAL: Add Employee -->
+<div class="modal-overlay" id="modal-addEmployee" style="display:none">
+  <div class="modal">
+    <div class="modal-title"><div class="modal-icon">👤</div> Add New Employee</div>
+    <div class="form-row">
+      <label class="form-label">Full Name</label>
+      <input type="text" class="form-input" id="emp-name" placeholder="e.g. John Smith">
+    </div>
+    <div class="form-row">
+      <label class="form-label">BYD Email</label>
+      <input type="text" class="form-input" id="emp-email" placeholder="e.g. john.smith@byd.com">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('addEmployee')">Cancel</button>
+      <button class="btn btn-primary" onclick="addEmployee()">Add Employee</button>
+    </div>
+  </div>
+</div>
 
-        function toggleLoading(show) {
-            document.getElementById('loading').style.display = show ? 'flex' : 'none';
-        }
+<!-- MODAL: Add Device -->
+<div class="modal-overlay" id="modal-addDevice" style="display:none">
+  <div class="modal">
+    <div class="modal-title"><div class="modal-icon">🖥️</div> Add New Device</div>
+    <div class="form-row">
+      <label class="form-label">Device Type</label>
+      <select class="form-select" id="dev-type">
+        <option value="DESKTOP">Desktop (CPU)</option>
+        <option value="LAPTOP">Laptop</option>
+        <option value="SCREEN">Screen / Monitor</option>
+        <option value="HEADSET">Headset</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Serial Number (S/N)</label>
+      <input type="text" class="form-input" id="dev-sn" placeholder="e.g. GM129EKZ">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Add to Pool</label>
+      <select class="form-select" id="dev-pool">
+        <option value="free">Available (Deposit)</option>
+        <option value="broken">Broken / Retired</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('addDevice')">Cancel</button>
+      <button class="btn btn-primary" onclick="addDevice()">Add Device</button>
+    </div>
+  </div>
+</div>
 
-        // ── NETLIFY / CORS COMPATIBLE READ via JSONP ──
-        function fetchDataViaJSONP() {
-            toggleLoading(true);
-            
-            // Remove previous instances of the tag to avoid polluting DOM
-            const existingScript = document.getElementById('jsonp-script');
-            if (existingScript) existingScript.remove();
+<!-- MODAL: Reassign single device -->
+<div class="modal-overlay" id="modal-reassign" style="display:none">
+  <div class="modal">
+    <div class="modal-title"><div class="modal-icon">🔄</div> Reassign Device</div>
+    <div class="info-box" id="reassign-info"></div>
+    <div class="form-row">
+      <label class="form-label">Send to</label>
+      <select class="form-select" id="reassign-dest" onchange="onReassignDestChange()">
+        <option value="free">📦 Return to Available Pool</option>
+        <option value="broken">🔧 Mark as Broken / Retired</option>
+        <option value="employee">👤 Assign to Employee</option>
+      </select>
+    </div>
+    <div id="reassign-emp-wrap" style="display:none">
+      <div class="form-label" style="margin-bottom:8px">Select Employee</div>
+      <div class="emp-picker" id="reassign-emp-list"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('reassign')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmReassign()">Confirm</button>
+    </div>
+  </div>
+</div>
 
-            const script = document.createElement('script');
-            script.id = 'jsonp-script';
-            // Passing the execution callback route parameter
-            script.src = `${APPS_SCRIPT_URL}?callback=handleSheetsResponse&_=${new Date().getTime()}`;
-            
-            script.onerror = () => {
-                console.error("JSONP Injection architecture encountered a structural handshake error.");
-                toggleLoading(false);
-                alert("Failed to reach Google Sheets API. Double check your Apps Script deployment configuration.");
-            };
-            
-            document.body.appendChild(script);
-        }
+<!-- MODAL: Assign from pool -->
+<div class="modal-overlay" id="modal-assign" style="display:none">
+  <div class="modal">
+    <div class="modal-title"><div class="modal-icon">➕</div> Assign Device to Employee</div>
+    <div class="info-box" id="assign-info"></div>
+    <div class="form-label" style="margin-bottom:8px">Select Employee</div>
+    <div class="emp-picker" id="assign-emp-list"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('assign')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAssign()">Assign</button>
+    </div>
+  </div>
+</div>
 
-        // Target matching callback listener executed by the incoming script
-        window.handleSheetsResponse = function(data) {
-            toggleLoading(false);
-            if (Array.isArray(data) && data.length > 0) {
-                assets = data;
-                localStorage.setItem('byd_assets_tracker_netlify', JSON.stringify(assets));
-                renderApp();
-            } else {
-                console.warn("API parsed payload was empty.");
-            }
-        };
+<script>
+  // ── CONFIG ──
+  const PASSWORD   = 'sanlorenzo123';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzQBdGpe1o2g6WklMi-SskkFDeRqZ8bmwNznp0tlv2nR3SuXnYSQsWaGTwDxpOzCzw/exec';
 
-        // ── NETLIFY / CORS COMPATIBLE WRITE via Parameterized URL Queries ──
-        async function updateUpstreamSheet(parameters) {
-            toggleLoading(true);
-            try {
-                const queryParameters = new URLSearchParams(parameters).toString();
-                
-                // Fetch using 'no-cors' mode acts as an isolated ping that drops response isolation, bypassing browser blocks.
-                await fetch(`${APPS_SCRIPT_URL}?${queryParameters}`, {
-                    method: "GET",
-                    mode: "no-cors",
-                    cache: "no-cache"
-                });
+  // Sheet column names
+  const C = { name:'Name', email:'BYD Mail', sn:'S/N', type:'Type', s1:'Screen 1', s2:'Screen 2', headset:'Headset' };
 
-                // Polling synchronization validation pass
-                setTimeout(fetchDataViaJSONP, 1200);
-            } catch (error) {
-                console.error("Upstream deployment pipeline pipeline failed:", error);
-                toggleLoading(false);
-            }
-        }
+  // ── STATE ──
+  // Internal device pool — each device is an independent object:
+  // { id, sn, type, assignedTo: {name, email} | null, status: 'assigned'|'free'|'broken' }
+  let devices = [];
+  // Employees: { name, email }
+  let employees = [];
 
-        function renderApp() {
-            renderTable();
-            renderDropdowns();
-            calculateMetrics();
-        }
+  let currentTab = 'assigned';
+  let currentView = 'employee'; // 'employee' or 'device'
+  let searchQuery = '';
+  let reassignDeviceId = null;
+  let assignDeviceId = null;
+  let selectedEmpEmail = null;
 
-        function renderTable() {
-            const tbody = document.querySelector('#tabla-assets tbody');
-            tbody.innerHTML = '';
+  // ── LOGIN ──
+  function checkLogin() {
+    if (document.getElementById('passwordInput').value === PASSWORD) {
+      sessionStorage.setItem('byd_asset_auth','1');
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('appShell').style.display = 'block';
+      loadData();
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+      document.getElementById('passwordInput').value = '';
+    }
+  }
+  document.getElementById('loginBtn').addEventListener('click', checkLogin);
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key==='Enter') checkLogin(); });
+  if (sessionStorage.getItem('byd_asset_auth')==='1') {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appShell').style.display = 'block';
+    loadData();
+  }
 
-            if (assets.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>No records found. Synchronize database.</td></tr>';
-                return;
-            }
+  // ── STATUS ──
+  function setStatus(type, text) {
+    document.getElementById('statusDot').className = 'status-dot ' + type;
+    document.getElementById('statusText').textContent = text;
+  }
 
-            assets.forEach(asset => {
-                const tr = document.createElement('tr');
-                
-                let nameDisplay = `<strong>${asset.name}</strong>`;
-                if (asset.name === 'DEPOSIT') nameDisplay = `<span class="badge bg-success-subtle text-success badge-custom"><i class="fa-solid fa-warehouse me-1"></i>DEPOSIT</span>`;
-                if (asset.name === 'OFFICE' && asset.mail === 'BROKEN') nameDisplay = `<span class="badge bg-danger-subtle text-danger badge-custom"><i class="fa-solid fa-heart-crack me-1"></i>BROKEN</span>`;
-                if (asset.name === 'OFFICE' && asset.mail === 'UNASSIGNED') nameDisplay = `<span class="badge bg-info-subtle text-info badge-custom"><i class="fa-solid fa-building me-1"></i>OFFICE STOCK</span>`;
+  // ── LOAD & NORMALIZE ──
+  async function loadData() {
+    setStatus('loading','Connecting to Google Sheets...');
+    try {
+      const res = await fetch(SCRIPT_URL);
+      if (!res.ok) throw new Error('HTTP '+res.status);
+      const rows = await res.json();
+      if (!Array.isArray(rows)||rows.length===0) throw new Error('No data');
+      normalizeData(rows);
+      setStatus('ok', devices.length+' devices loaded');
+      renderStats(); renderTable();
+    } catch(err) {
+      setStatus('error','Could not load: '+err.message);
+    }
+  }
 
-                tr.innerHTML = `
-                    <td>${nameDisplay}</td>
-                    <td class="text-muted">${asset.mail || '-'}</td>
-                    <td>${asset.sn && asset.sn !== 'SIN ASIGNAR' && asset.sn !== 'UNASSIGNED' ? `<span class="code-sn">${asset.sn}</span>` : '<span class="text-black-50">-</span>'}</td>
-                    <td><small class="fw-semibold text-secondary">${asset.type && asset.type !== '-' ? asset.type : '-'}</small></td>
-                    <td>${asset.s1 ? `<span class="code-sn">${asset.s1}</span>` : '<span class="text-black-50">-</span>'}</td>
-                    <td>${asset.s2 ? `<span class="code-sn">${asset.s2}</span>` : '<span class="text-black-50">-</span>'}</td>
-                    <td>${asset.headset ? `<span class="code-sn">${asset.headset}</span>` : '<span class="text-black-50">-</span>'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+  let _nextId = 1;
+  function uid() { return _nextId++; }
 
-        function calculateMetrics() {
-            let active = 0; let deposit = 0; let broken = 0; let itemsCount = 0;
+  function normalizeData(rows) {
+    devices = [];
+    const empMap = {};
 
-            assets.forEach(a => {
-                if (a.mail === 'UNASSIGNED') {
-                    deposit++; itemsCount++;
-                } else if (a.mail === 'BROKEN') {
-                    broken++; itemsCount++;
-                } else {
-                    active++;
-                    if (a.sn && a.sn !== 'SIN ASIGNAR' && a.sn !== 'UNASSIGNED') itemsCount++;
-                    if (a.s1) itemsCount++; if (a.s2) itemsCount++; if (a.headset) itemsCount++;
-                }
-            });
+    rows.forEach(r => {
+      const email = (r[C.email]||'').trim();
+      const name  = (r[C.name]||'').trim();
+      const isFree   = email === 'UNASSIGNED';
+      const isBroken = email === 'BROKEN';
+      const isAssigned = !isFree && !isBroken && email !== '';
 
-            document.getElementById('stat-activos').innerText = active;
-            document.getElementById('stat-deposito').innerText = deposit;
-            document.getElementById('stat-rotos').innerText = broken;
-            document.getElementById('stat-total').innerText = itemsCount;
-        }
+      // Track employees
+      if (isAssigned && !empMap[email]) {
+        empMap[email] = { name, email };
+      }
 
-        function renderDropdowns() {
-            const origenSelect = document.getElementById('re-origen');
-            const destinoSelect = document.getElementById('re-destino');
-            
-            const prevOrigen = origenSelect.value;
-            const prevDestino = destinoSelect.value;
+      const assignedTo = isAssigned ? { name, email } : null;
+      const status = isBroken ? 'broken' : isFree ? 'free' : 'assigned';
 
-            origenSelect.innerHTML = '<option value="">-- Select Source Component Owner --</option>';
-            destinoSelect.innerHTML = '<option value="">-- Select Destination Allocation Target --</option>';
+      // CPU / Laptop (main device)
+      if (r[C.sn]) {
+        devices.push({ id: uid(), sn: r[C.sn].trim(), type: (r[C.type]||'DESKTOP').toUpperCase(), assignedTo, status });
+      }
+      // Screen 1
+      if (r[C.s1]) {
+        devices.push({ id: uid(), sn: r[C.s1].trim(), type: 'SCREEN', assignedTo, status });
+      }
+      // Screen 2
+      if (r[C.s2]) {
+        devices.push({ id: uid(), sn: r[C.s2].trim(), type: 'SCREEN', assignedTo, status });
+      }
+      // Headset
+      if (r[C.headset]) {
+        devices.push({ id: uid(), sn: r[C.headset].trim(), type: 'HEADSET', assignedTo, status });
+      }
+    });
 
-            destinoSelect.innerHTML += `<option value="GLOBAL_DEPOSIT">Move to DEPOSIT (Available Stock Pool)</option>`;
-            destinoSelect.innerHTML += `<option value="GLOBAL_BROKEN">Move to BROKEN (Decommissioned Pool)</option>`;
+    employees = Object.values(empMap).sort((a,b)=>a.name.localeCompare(b.name));
+  }
 
-            const trackingMails = new Set();
+  // ── HELPERS ──
+  function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function initials(n){ return String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase(); }
+  function badgeClass(type){
+    const t = (type||'').toLowerCase();
+    if (t==='desktop'||t==='laptop') return 'badge-'+t;
+    if (t==='screen') return 'badge-screen';
+    if (t==='headset') return 'badge-headset';
+    return 'badge-desktop';
+  }
+  function typeIcon(type){
+    const t=(type||'').toUpperCase();
+    if(t==='DESKTOP') return '🖥️';
+    if(t==='LAPTOP') return '💻';
+    if(t==='SCREEN') return '🖵';
+    if(t==='HEADSET') return '🎧';
+    return '📦';
+  }
 
-            assets.forEach(asset => {
-                if (asset.sn && asset.sn !== 'SIN ASIGNAR' && asset.sn !== '' && asset.sn !== 'UNASSIGNED') {
-                    if (asset.mail === 'UNASSIGNED' || asset.mail === 'BROKEN') {
-                        origenSelect.innerHTML += `<option value="${asset.sn}">[Stock Storage] S/N: ${asset.sn} (${asset.name})</option>`;
-                    } else if (!trackingMails.has(asset.mail)) {
-                        trackingMails.add(asset.mail);
-                        origenSelect.innerHTML += `<option value="${asset.mail}">${asset.name} (${asset.mail})</option>`;
-                    }
-                }
-                
-                if (asset.mail !== 'UNASSIGNED' && asset.mail !== 'BROKEN' && asset.mail) {
-                    if (!destinoSelect.innerHTML.includes(asset.mail)) {
-                        destinoSelect.innerHTML += `<option value="${asset.mail}">${asset.name} (${asset.mail})</option>`;
-                    }
-                }
-            });
+  // ── STATS ──
+  function renderStats(){
+    const assigned = devices.filter(d=>d.status==='assigned').length;
+    const free     = devices.filter(d=>d.status==='free').length;
+    const broken   = devices.filter(d=>d.status==='broken').length;
+    const empCount = employees.length;
+    const desktops = devices.filter(d=>d.type==='DESKTOP'&&d.status==='assigned').length;
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card orange"><div class="stat-num">${assigned}</div><div class="stat-label">Assigned</div></div>
+      <div class="stat-card green"><div class="stat-num">${free}</div><div class="stat-label">Available</div></div>
+      <div class="stat-card red"><div class="stat-num">${broken}</div><div class="stat-label">Broken</div></div>
+      <div class="stat-card blue"><div class="stat-num">${empCount}</div><div class="stat-label">Employees</div></div>
+      <div class="stat-card purple"><div class="stat-num">${devices.length}</div><div class="stat-label">Total Devices</div></div>
+    `;
+  }
 
-            origenSelect.value = prevOrigen;
-            destinoSelect.value = prevDestino;
-        }
+  // ── TABS & VIEW ──
+  function setTab(tab, el){
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+    searchQuery=''; document.getElementById('searchInput').value='';
+    // Show view toggle only on assigned tab
+    document.getElementById('viewToggle').style.display = (tab==='assigned') ? 'flex' : 'none';
+    renderTable();
+  }
+  function setView(view, el){
+    currentView = view;
+    document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');
+    renderTable();
+  }
+  document.getElementById('searchInput').addEventListener('input', e=>{ searchQuery=e.target.value.toLowerCase(); renderTable(); });
+  function clearSearch(){ searchQuery=''; document.getElementById('searchInput').value=''; renderTable(); }
 
-        function updateAvailableComponents() {
-            const origen = document.getElementById('re-origen').value;
-            const assetSelect = document.getElementById('re-asset');
-            assetSelect.innerHTML = '<option value="">-- Select Target Hardware Component --</option>';
+  // ── RENDER TABLE ──
+  function renderTable(){
+    const c = document.getElementById('tableContainer');
+    const q = searchQuery;
 
-            if (!origen) return;
+    if (currentTab==='assigned') {
+      const assigned = devices.filter(d=>d.status==='assigned');
+      const filtered = q ? assigned.filter(d=>
+        (d.sn+d.type+(d.assignedTo?.name||'')+(d.assignedTo?.email||'')).toLowerCase().includes(q)
+      ) : assigned;
 
-            const dispositivoDirecto = assets.find(a => a.sn === origen && (a.mail === 'UNASSIGNED' || a.mail === 'BROKEN'));
-            
-            if (dispositivoDirecto) {
-                assetSelect.innerHTML += `<option value="${dispositivoDirecto.sn}">${dispositivoDirecto.type || 'UNIT'} - S/N: ${dispositivoDirecto.sn}</option>`;
-            } else {
-                assets.forEach(a => {
-                    if (a.mail === origen) {
-                        if (a.sn && a.sn !== 'SIN ASIGNAR' && a.sn !== 'UNASSIGNED') assetSelect.innerHTML += `<option value="${a.sn}">Main Box - S/N: ${a.sn}</option>`;
-                        if (a.s1) assetSelect.innerHTML += `<option value="${a.s1}">Screen 1 - S/N: ${a.s1}</option>`;
-                        if (a.s2) assetSelect.innerHTML += `<option value="${a.s2}">Screen 2 - S/N: ${a.s2}</option>`;
-                        if (a.headset) assetSelect.innerHTML += `<option value="${a.headset}">Headset - S/N: ${a.headset}</option>`;
-                    }
-                });
-            }
-        }
+      if (!filtered.length){ c.innerHTML=emptyHTML('No assigned devices found.'); return; }
 
-        function addEmployee(e) {
-            e.preventDefault();
-            const name = document.getElementById('emp-nombre').value.trim();
-            const email = document.getElementById('emp-email').value.trim();
+      if (currentView==='employee') {
+        renderByEmployee(c, filtered);
+      } else {
+        renderByDeviceType(c, filtered, true);
+      }
 
-            if (assets.some(a => a.mail && a.mail.toLowerCase() === email.toLowerCase() && email.toLowerCase() !== 'unassigned' && email.toLowerCase() !== 'broken')) {
-                alert('This user is already mapped inside the inventory.'); return;
-            }
+    } else if (currentTab==='free') {
+      let rows = devices.filter(d=>d.status==='free');
+      if (q) rows = rows.filter(d=>(d.sn+d.type).toLowerCase().includes(q));
+      if (!rows.length){ c.innerHTML=emptyHTML('No available devices in pool.'); return; }
+      renderByDeviceType(c, rows, false);
 
-            updateUpstreamSheet({
-                action: "NEW_EMPLOYEE",
-                name: name,
-                mail: email
-            });
-            e.target.reset();
-        }
+    } else if (currentTab==='broken') {
+      let rows = devices.filter(d=>d.status==='broken');
+      if (q) rows = rows.filter(d=>(d.sn+d.type).toLowerCase().includes(q));
+      if (!rows.length){ c.innerHTML=emptyHTML('No broken or retired devices.'); return; }
+      renderByDeviceType(c, rows, false, true);
 
-        function addDevice(e) {
-            e.preventDefault();
-            const sn = document.getElementById('dev-sn').value.trim();
-            const type = document.getElementById('dev-type').value;
-            const status = document.getElementById('dev-status').value;
+    } else if (currentTab==='employees') {
+      let emps = employees;
+      if (q) emps = emps.filter(e=>(e.name+e.email).toLowerCase().includes(q));
+      if (!emps.length){ c.innerHTML=emptyHTML('No employees found.'); return; }
+      renderEmployeeList(c, emps);
+    }
+  }
 
-            if (assets.some(a => (a.sn === sn || a.s1 === sn || a.s2 === sn || a.headset === sn) && sn !== '')) {
-                alert('This serial number is already allocated to a device.'); return;
-            }
+  function renderByEmployee(c, rows){
+    // Group by employee email
+    const empMap = {};
+    rows.forEach(d=>{
+      const key = d.assignedTo.email;
+      if (!empMap[key]) empMap[key] = { ...d.assignedTo, devices:[] };
+      empMap[key].devices.push(d);
+    });
+    const groups = Object.values(empMap).sort((a,b)=>a.name.localeCompare(b.name));
 
-            updateUpstreamSheet({
-                action: "NEW_DEVICE",
-                sn: sn,
-                type: type,
-                status: status
-            });
-            e.target.reset();
-        }
+    let html = `<table>
+      <thead><tr>
+        <th>Employee</th><th>Type</th><th>S/N</th><th>Actions</th>
+      </tr></thead><tbody>`;
 
-        function reassignDevice(e) {
-            e.preventDefault();
-            const source = document.getElementById('re-origen').value;
-            const itemSN = document.getElementById('re-asset').value;
-            const destination = document.getElementById('re-destino').value;
+    groups.forEach(g=>{
+      html += `<tr class="emp-group-header">
+        <td colspan="4">
+          <div class="person-cell">
+            <div class="avatar">${initials(g.name)}</div>
+            <span>${escH(g.name)}</span>
+            <span style="color:var(--byd-grey);font-size:0.8rem;font-weight:400">${escH(g.email)}</span>
+            <span style="color:var(--byd-grey);font-size:0.78rem;font-weight:400;margin-left:4px">${g.devices.length} device${g.devices.length!==1?'s':''}</span>
+          </div>
+        </td>
+      </tr>`;
+      g.devices.forEach(d=>{
+        html += `<tr class="emp-sub-row">
+          <td></td>
+          <td><span class="badge ${badgeClass(d.type)}">${typeIcon(d.type)} ${escH(d.type)}</span></td>
+          <td><span class="sn-code">${escH(d.sn)}</span></td>
+          <td><div class="td-actions">
+            <button class="btn btn-secondary btn-sm" onclick="openReassign(${d.id})">🔄 Reassign</button>
+          </div></td>
+        </tr>`;
+      });
+    });
+    html += '</tbody></table>';
+    c.innerHTML = html;
+  }
 
-            if (!itemSN) return;
+  function renderByDeviceType(c, rows, showAssignee=false, isBroken=false){
+    const types = ['DESKTOP','LAPTOP','SCREEN','HEADSET'];
+    const grouped = {};
+    types.forEach(t=>{ grouped[t]=[]; });
+    rows.forEach(d=>{ if(grouped[d.type]) grouped[d.type].push(d); else grouped['DESKTOP'].push(d); });
 
-            let subComponentType = 'PC'; 
-            for (let i = 0; i < assets.length; i++) {
-                if (assets[i].sn === itemSN) { subComponentType = 'PC'; break; }
-                if (assets[i].s1 === itemSN) { subComponentType = 'S1'; break; }
-                if (assets[i].s2 === itemSN) { subComponentType = 'S2'; break; }
-                if (assets[i].headset === itemSN) { subComponentType = 'HEADSET'; break; }
-            }
+    let html = `<table><thead><tr>
+      <th>Type</th><th>S/N</th>
+      ${showAssignee ? '<th>Assigned To</th>' : ''}
+      <th>Actions</th>
+    </tr></thead><tbody>`;
 
-            updateUpstreamSheet({
-                action: "REASSIGNMENT",
-                source: source,
-                destination: destination,
-                sn: itemSN,
-                type: subComponentType
-            });
-            
-            document.getElementById('re-origen').value = '';
-            document.getElementById('re-asset').innerHTML = '<option value="">-- Select Target Hardware Component --</option>';
-        }
+    types.forEach(type=>{
+      const list = grouped[type];
+      if (!list.length) return;
+      html += `<tr class="type-section-header"><td colspan="${showAssignee?4:3}">${typeIcon(type)} ${type} — ${list.length} device${list.length!==1?'s':''}</td></tr>`;
+      list.forEach(d=>{
+        html += `<tr>
+          <td><span class="badge ${badgeClass(d.type)}">${escH(d.type)}</span></td>
+          <td><span class="sn-code">${escH(d.sn)}</span></td>
+          ${showAssignee ? `<td><div class="person-cell"><div class="avatar">${initials(d.assignedTo?.name)}</div>${escH(d.assignedTo?.name||'—')}</div></td>` : ''}
+          <td><div class="td-actions">
+            ${!isBroken ? `<button class="btn btn-green btn-sm" onclick="openAssign(${d.id})">➕ Assign</button>` : ''}
+            ${showAssignee ? `<button class="btn btn-secondary btn-sm" onclick="openReassign(${d.id})">🔄 Reassign</button>` : ''}
+            ${!isBroken && !showAssignee ? `<button class="btn btn-red btn-sm" onclick="markBroken(${d.id})">🔧 Broken</button>` : ''}
+            ${isBroken ? `<button class="btn btn-green btn-sm" onclick="restoreDevice(${d.id})">♻️ Restore</button>` : ''}
+          </div></td>
+        </tr>`;
+      });
+    });
+    html += '</tbody></table>';
+    c.innerHTML = html;
+  }
 
-        function exportToCSV() {
-            let csvContent = "data:text/csv;charset=utf-8,Name,BYD Mail,S/N,Type,Screen 1,Screen 2,Headset\n";
-            assets.forEach(a => {
-                csvContent += `"${a.name || ''}","${a.mail || ''}","${a.sn || ''}","${a.type || ''}","${a.s1 || ''}","${a.s2 || ''}","${a.headset || ''}"\n`;
-            });
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Asset_Fleet_Matrix.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    </script>
+  function renderEmployeeList(c, emps){
+    let html = `<table><thead><tr>
+      <th>Employee</th><th>Email</th><th>Devices</th><th>S/Ns</th>
+    </tr></thead><tbody>`;
+    emps.forEach(e=>{
+      const devs = devices.filter(d=>d.status==='assigned'&&d.assignedTo?.email===e.email);
+      html += `<tr>
+        <td><div class="person-cell"><div class="avatar">${initials(e.name)}</div><strong>${escH(e.name)}</strong></div></td>
+        <td style="color:var(--byd-grey);font-size:0.83rem">${escH(e.email)}</td>
+        <td>${devs.map(d=>`<span class="badge ${badgeClass(d.type)}" style="margin-right:3px">${typeIcon(d.type)} ${escH(d.type)}</span>`).join('')||'—'}</td>
+        <td>${devs.map(d=>`<span class="sn-code" style="margin-right:4px">${escH(d.sn)}</span>`).join('')||'—'}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    c.innerHTML = html;
+  }
+
+  function emptyHTML(msg){
+    return `<div class="empty-state"><div class="empty-icon">📭</div><p>${msg}</p></div>`;
+  }
+
+  function findDevice(id){ return devices.find(d=>d.id===id); }
+
+  // ── ADD EMPLOYEE ──
+  function addEmployee(){
+    const name  = document.getElementById('emp-name').value.trim();
+    const email = document.getElementById('emp-email').value.trim();
+    if (!name||!email){ alert('Please fill in both fields.'); return; }
+    if (employees.find(e=>e.email===email)){ alert('Employee with this email already exists.'); return; }
+    employees.push({ name, email });
+    employees.sort((a,b)=>a.name.localeCompare(b.name));
+    closeModal('addEmployee');
+    document.getElementById('emp-name').value='';
+    document.getElementById('emp-email').value='';
+    renderStats(); renderTable();
+  }
+
+  // ── ADD DEVICE ──
+  function addDevice(){
+    const type   = document.getElementById('dev-type').value;
+    const sn     = document.getElementById('dev-sn').value.trim().toUpperCase();
+    const pool   = document.getElementById('dev-pool').value;
+    if (!sn){ alert('Please enter a serial number.'); return; }
+    if (devices.find(d=>d.sn===sn)){ alert('A device with this S/N already exists.'); return; }
+    devices.push({ id:uid(), sn, type, assignedTo:null, status: pool==='broken'?'broken':'free' });
+    closeModal('addDevice');
+    document.getElementById('dev-sn').value='';
+    renderStats(); renderTable();
+  }
+
+  // ── REASSIGN ──
+  function openReassign(id){
+    reassignDeviceId = id;
+    selectedEmpEmail = null;
+    const d = findDevice(id);
+    if (!d) return;
+    document.getElementById('reassign-info').innerHTML = `
+      <span class="badge ${badgeClass(d.type)}">${typeIcon(d.type)} ${escH(d.type)}</span>
+      &nbsp; <span class="sn-code">${escH(d.sn)}</span>
+      ${d.assignedTo ? `&nbsp; currently assigned to <strong>${escH(d.assignedTo.name)}</strong>` : ''}
+    `;
+    document.getElementById('reassign-dest').value = 'free';
+    document.getElementById('reassign-emp-wrap').style.display = 'none';
+    openModal('reassign');
+  }
+
+  function onReassignDestChange(){
+    const val = document.getElementById('reassign-dest').value;
+    const show = val === 'employee';
+    document.getElementById('reassign-emp-wrap').style.display = show ? 'block' : 'none';
+    if (show) buildEmpPicker('reassign-emp-list');
+  }
+
+  function buildEmpPicker(containerId, excludeEmail=''){
+    const list = employees.filter(e=>e.email!==excludeEmail);
+    document.getElementById(containerId).innerHTML = list.map(e=>`
+      <div class="emp-picker-item ${selectedEmpEmail===e.email?'selected':''}"
+           onclick="selectEmp('${escH(e.email)}','${containerId}',this)">
+        <div class="avatar">${initials(e.name)}</div>
+        <div><strong>${escH(e.name)}</strong><br>
+        <span style="color:var(--byd-grey);font-size:0.8rem">${escH(e.email)}</span></div>
+      </div>`).join('') || '<p style="padding:14px;color:var(--byd-grey);font-size:0.88rem">No employees found.</p>';
+  }
+
+  function selectEmp(email, containerId, el){
+    selectedEmpEmail = email;
+    document.getElementById(containerId).querySelectorAll('.emp-picker-item').forEach(i=>i.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function confirmReassign(){
+    const d = findDevice(reassignDeviceId);
+    if (!d) return;
+    const dest = document.getElementById('reassign-dest').value;
+    if (dest==='employee'){
+      if (!selectedEmpEmail){ alert('Please select an employee.'); return; }
+      const emp = employees.find(e=>e.email===selectedEmpEmail);
+      d.assignedTo = { name:emp.name, email:emp.email };
+      d.status = 'assigned';
+    } else if (dest==='free'){
+      d.assignedTo = null; d.status = 'free';
+    } else if (dest==='broken'){
+      d.assignedTo = null; d.status = 'broken';
+    }
+    closeModal('reassign');
+    reassignDeviceId=null; selectedEmpEmail=null;
+    renderStats(); renderTable();
+  }
+
+  // ── ASSIGN FROM POOL ──
+  function openAssign(id){
+    assignDeviceId = id;
+    selectedEmpEmail = null;
+    const d = findDevice(id);
+    if (!d) return;
+    document.getElementById('assign-info').innerHTML = `
+      <span class="badge ${badgeClass(d.type)}">${typeIcon(d.type)} ${escH(d.type)}</span>
+      &nbsp; <span class="sn-code">${escH(d.sn)}</span>
+    `;
+    buildEmpPicker('assign-emp-list');
+    openModal('assign');
+  }
+
+  function confirmAssign(){
+    if (!selectedEmpEmail){ alert('Please select an employee.'); return; }
+    const d = findDevice(assignDeviceId);
+    const emp = employees.find(e=>e.email===selectedEmpEmail);
+    if (!d||!emp) return;
+    d.assignedTo = { name:emp.name, email:emp.email };
+    d.status = 'assigned';
+    closeModal('assign');
+    assignDeviceId=null; selectedEmpEmail=null;
+    renderStats(); renderTable();
+  }
+
+  // ── BROKEN / RESTORE ──
+  function markBroken(id){
+    if (!confirm('Mark this device as broken/retired?')) return;
+    const d = findDevice(id);
+    d.assignedTo=null; d.status='broken';
+    renderStats(); renderTable();
+  }
+  function restoreDevice(id){
+    if (!confirm('Restore this device to available pool?')) return;
+    const d = findDevice(id);
+    d.assignedTo=null; d.status='free';
+    renderStats(); renderTable();
+  }
+
+  // ── EXPORT CSV ──
+  function exportCSV(){
+    const headers = ['Name','BYD Mail','S/N','Type','Status'];
+    const rows = devices.map(d=>[
+      d.assignedTo?.name||'',
+      d.assignedTo?.email||d.status.toUpperCase(),
+      d.sn, d.type, d.status
+    ]);
+    const csv = [headers, ...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv],{type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'BYD_Assets_'+new Date().toISOString().slice(0,10)+'.csv';
+    a.click();
+  }
+
+  // ── MODALS ──
+  function openModal(id){ document.getElementById('modal-'+id).style.display='flex'; }
+  function closeModal(id){ document.getElementById('modal-'+id).style.display='none'; }
+  document.querySelectorAll('.modal-overlay').forEach(m=>{
+    m.addEventListener('click', e=>{ if(e.target===m) m.style.display='none'; });
+  });
+</script>
 </body>
 </html>
