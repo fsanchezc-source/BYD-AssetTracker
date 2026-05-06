@@ -248,11 +248,21 @@
       <input type="text" class="form-input" id="dev-sn" placeholder="e.g. GM129EKZ">
     </div>
     <div class="form-row">
-      <label class="form-label">Add to Pool</label>
-      <select class="form-select" id="dev-pool">
-        <option value="free">Available (Deposit)</option>
-        <option value="broken">Broken / Retired</option>
+      <label class="form-label">Assign to</label>
+      <select class="form-select" id="dev-pool" onchange="onDevPoolChange()">
+        <option value="free">📦 Available Pool (Deposit)</option>
+        <option value="broken">🔧 Broken / Retired</option>
+        <option value="employee">👤 Assign to Employee</option>
       </select>
+    </div>
+    <div id="dev-emp-wrap" style="display:none">
+      <div class="form-label" style="margin-bottom:8px">Select Employee</div>
+      <div class="search-wrap" style="margin-bottom:10px">
+        <span style="color:var(--byd-grey)">🔍</span>
+        <input type="text" id="dev-emp-search" placeholder="Search employee..." oninput="filterEmpPicker('dev-emp-list','dev-emp-search')">
+        <button onclick="clearEmpSearch('dev-emp-list','dev-emp-search')" style="border:none;background:none;cursor:pointer;color:var(--byd-grey);font-size:1rem;">✕</button>
+      </div>
+      <div class="emp-picker" id="dev-emp-list"></div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('addDevice')">Cancel</button>
@@ -276,6 +286,11 @@
     </div>
     <div id="reassign-emp-wrap" style="display:none">
       <div class="form-label" style="margin-bottom:8px">Select Employee</div>
+      <div class="search-wrap" style="margin-bottom:10px">
+        <span style="color:var(--byd-grey)">🔍</span>
+        <input type="text" id="reassign-search" placeholder="Search employee..." oninput="filterEmpPicker('reassign-emp-list','reassign-search')">
+        <button onclick="clearEmpSearch('reassign-emp-list','reassign-search')" style="border:none;background:none;cursor:pointer;color:var(--byd-grey);font-size:1rem;">✕</button>
+      </div>
       <div class="emp-picker" id="reassign-emp-list"></div>
     </div>
     <div class="modal-actions">
@@ -291,6 +306,11 @@
     <div class="modal-title"><div class="modal-icon">➕</div> Assign Device to Employee</div>
     <div class="info-box" id="assign-info"></div>
     <div class="form-label" style="margin-bottom:8px">Select Employee</div>
+    <div class="search-wrap" style="margin-bottom:10px">
+      <span style="color:var(--byd-grey)">🔍</span>
+      <input type="text" id="assign-search" placeholder="Search employee..." oninput="filterEmpPicker('assign-emp-list','assign-search')">
+      <button onclick="clearEmpSearch('assign-emp-list','assign-search')" style="border:none;background:none;cursor:pointer;color:var(--byd-grey);font-size:1rem;">✕</button>
+    </div>
     <div class="emp-picker" id="assign-emp-list"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('assign')">Cancel</button>
@@ -612,15 +632,38 @@
   }
 
   // ── ADD DEVICE ──
+  function onDevPoolChange(){
+    const val = document.getElementById('dev-pool').value;
+    const show = val === 'employee';
+    document.getElementById('dev-emp-wrap').style.display = show ? 'block' : 'none';
+    if (show) buildEmpPicker('dev-emp-list');
+  }
+
   function addDevice(){
     const type   = document.getElementById('dev-type').value;
     const sn     = document.getElementById('dev-sn').value.trim().toUpperCase();
     const pool   = document.getElementById('dev-pool').value;
     if (!sn){ alert('Please enter a serial number.'); return; }
     if (devices.find(d=>d.sn===sn)){ alert('A device with this S/N already exists.'); return; }
-    devices.push({ id:uid(), sn, type, assignedTo:null, status: pool==='broken'?'broken':'free' });
+
+    let assignedTo = null;
+    let status = 'free';
+
+    if (pool === 'broken') {
+      status = 'broken';
+    } else if (pool === 'employee') {
+      if (!selectedEmpEmail){ alert('Please select an employee.'); return; }
+      const emp = employees.find(e=>e.email===selectedEmpEmail);
+      assignedTo = { name: emp.name, email: emp.email };
+      status = 'assigned';
+    }
+
+    devices.push({ id:uid(), sn, type, assignedTo, status });
     closeModal('addDevice');
     document.getElementById('dev-sn').value='';
+    document.getElementById('dev-pool').value='free';
+    document.getElementById('dev-emp-wrap').style.display='none';
+    selectedEmpEmail = null;
     renderStats(); renderTable();
   }
 
@@ -651,11 +694,25 @@
     const list = employees.filter(e=>e.email!==excludeEmail);
     document.getElementById(containerId).innerHTML = list.map(e=>`
       <div class="emp-picker-item ${selectedEmpEmail===e.email?'selected':''}"
+           data-name="${escH(e.name.toLowerCase())}" data-email="${escH(e.email.toLowerCase())}"
            onclick="selectEmp('${escH(e.email)}','${containerId}',this)">
         <div class="avatar">${initials(e.name)}</div>
         <div><strong>${escH(e.name)}</strong><br>
         <span style="color:var(--byd-grey);font-size:0.8rem">${escH(e.email)}</span></div>
       </div>`).join('') || '<p style="padding:14px;color:var(--byd-grey);font-size:0.88rem">No employees found.</p>';
+  }
+
+  function filterEmpPicker(listId, searchId){
+    const q = document.getElementById(searchId).value.toLowerCase();
+    document.getElementById(listId).querySelectorAll('.emp-picker-item').forEach(el=>{
+      const match = el.dataset.name.includes(q) || el.dataset.email.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+  }
+
+  function clearEmpSearch(listId, searchId){
+    document.getElementById(searchId).value = '';
+    filterEmpPicker(listId, searchId);
   }
 
   function selectEmp(email, containerId, el){
@@ -694,6 +751,7 @@
       &nbsp; <span class="sn-code">${escH(d.sn)}</span>
     `;
     buildEmpPicker('assign-emp-list');
+    document.getElementById('assign-search').value = '';
     openModal('assign');
   }
 
