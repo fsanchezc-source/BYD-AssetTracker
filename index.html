@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -211,6 +211,10 @@
       <label class="form-label">BYD Email</label>
       <input type="text" class="form-input" id="emp-email" placeholder="e.g. john.smith@byd.com">
     </div>
+    <div class="form-row">
+      <label class="form-label">Team Leader <span style="font-weight:400;text-transform:none">(optional)</span></label>
+      <input type="text" class="form-input" id="emp-tl" placeholder="e.g. Jane Doe">
+    </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('addEmployee')">Cancel</button>
       <button class="btn btn-primary" onclick="addEmployee()">Add Employee</button>
@@ -218,7 +222,48 @@
   </div>
 </div>
 
-<!-- MODAL: Add Device -->
+<!-- MODAL: Edit Employee -->
+<div class="modal-overlay" id="modal-editEmployee" style="display:none">
+  <div class="modal">
+    <div class="modal-title"><div class="modal-icon">✏️</div> Edit Employee</div>
+    <div class="form-row">
+      <label class="form-label">Full Name</label>
+      <input type="text" class="form-input" id="edit-emp-name" placeholder="e.g. John Smith">
+    </div>
+    <div class="form-row">
+      <label class="form-label">BYD Email</label>
+      <input type="text" class="form-input" id="edit-emp-email" placeholder="e.g. john.smith@byd.com">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Team Leader <span style="font-weight:400;text-transform:none">(optional)</span></label>
+      <input type="text" class="form-input" id="edit-emp-tl" placeholder="e.g. Jane Doe">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('editEmployee')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmEditEmployee()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Offboard Employee -->
+<div class="modal-overlay" id="modal-offboard" style="display:none">
+  <div class="modal">
+    <div class="modal-title"><div class="modal-icon" style="background:var(--red-soft);color:var(--red)">🚪</div> Offboard Employee</div>
+    <div class="info-box" id="offboard-info"></div>
+    <p style="font-size:0.9rem;color:var(--byd-text);margin-bottom:16px;">What should happen to their assigned devices?</p>
+    <div class="form-row">
+      <label class="form-label">Devices Action</label>
+      <select class="form-select" id="offboard-devices-action">
+        <option value="free">📦 Return all to Available Pool</option>
+        <option value="broken">🔧 Mark all as Broken / Retired</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('offboard')">Cancel</button>
+      <button class="btn btn-red" onclick="confirmOffboard()" style="background:var(--red);color:white;border:none;">🚪 Offboard Employee</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modal-addDevice" style="display:none">
   <div class="modal">
     <div class="modal-title"><div class="modal-icon">🖥️</div> Add New Device</div>
@@ -370,7 +415,7 @@
 
       // Track employees
       if (isAssigned && !empMap[email]) {
-        empMap[email] = { name, email };
+        empMap[email] = { name, email, teamLeader: r['Team Leader'] || '' };
       }
 
       const assignedTo = isAssigned ? { name, email } : null;
@@ -567,15 +612,20 @@
 
   function renderEmployeeList(c, emps){
     let html = `<table><thead><tr>
-      <th>Employee</th><th>Email</th><th>Devices</th><th>S/Ns</th>
+      <th>Employee</th><th>Email</th><th>Team Leader</th><th>Devices</th><th>S/Ns</th><th>Actions</th>
     </tr></thead><tbody>`;
     emps.forEach(e=>{
       const devs = devices.filter(d=>d.status==='assigned'&&d.assignedTo?.email===e.email);
       html += `<tr>
         <td><div class="person-cell"><div class="avatar">${initials(e.name)}</div><strong>${escH(e.name)}</strong></div></td>
         <td style="color:var(--byd-grey);font-size:0.83rem">${escH(e.email)}</td>
+        <td style="font-size:0.85rem">${e.teamLeader ? escH(e.teamLeader) : '<span style="color:var(--byd-grey)">—</span>'}</td>
         <td>${devs.map(d=>`<span class="badge ${badgeClass(d.type)}" style="margin-right:3px">${typeIcon(d.type)} ${escH(d.type)}</span>`).join('')||'—'}</td>
         <td>${devs.map(d=>`<span class="sn-code" style="margin-right:4px">${escH(d.sn)}</span>`).join('')||'—'}</td>
+        <td><div class="td-actions">
+          <button class="btn btn-secondary btn-sm" onclick="openEditEmployee('${escH(e.email)}')">✏️ Edit</button>
+          <button class="btn btn-red btn-sm" onclick="openOffboard('${escH(e.email)}')">🚪 Offboard</button>
+        </div></td>
       </tr>`;
     });
     html += '</tbody></table>';
@@ -592,13 +642,83 @@
   function addEmployee(){
     const name  = document.getElementById('emp-name').value.trim();
     const email = document.getElementById('emp-email').value.trim();
-    if (!name||!email){ alert('Please fill in both fields.'); return; }
+    const tl    = document.getElementById('emp-tl').value.trim();
+    if (!name||!email){ alert('Please fill in both name and email.'); return; }
     if (employees.find(e=>e.email===email)){ alert('Employee with this email already exists.'); return; }
-    employees.push({ name, email });
+    employees.push({ name, email, teamLeader: tl });
     employees.sort((a,b)=>a.name.localeCompare(b.name));
     closeModal('addEmployee');
     document.getElementById('emp-name').value='';
     document.getElementById('emp-email').value='';
+    document.getElementById('emp-tl').value='';
+    renderStats(); renderTable();
+  }
+
+  // ── EDIT EMPLOYEE ──
+  let editingEmpEmail = null;
+  function openEditEmployee(email){
+    const emp = employees.find(e=>e.email===email);
+    if (!emp) return;
+    editingEmpEmail = email;
+    document.getElementById('edit-emp-name').value  = emp.name;
+    document.getElementById('edit-emp-email').value = emp.email;
+    document.getElementById('edit-emp-tl').value    = emp.teamLeader || '';
+    openModal('editEmployee');
+  }
+
+  function confirmEditEmployee(){
+    const newName  = document.getElementById('edit-emp-name').value.trim();
+    const newEmail = document.getElementById('edit-emp-email').value.trim();
+    const newTL    = document.getElementById('edit-emp-tl').value.trim();
+    if (!newName||!newEmail){ alert('Please fill in both name and email.'); return; }
+    const emp = employees.find(e=>e.email===editingEmpEmail);
+    if (!emp) return;
+    // Update assignedTo references in devices if email changed
+    if (newEmail !== editingEmpEmail) {
+      devices.forEach(d=>{ if(d.assignedTo?.email===editingEmpEmail){ d.assignedTo.email=newEmail; } });
+    }
+    if (newName !== emp.name) {
+      devices.forEach(d=>{ if(d.assignedTo?.email===newEmail){ d.assignedTo.name=newName; } });
+    }
+    emp.name = newName;
+    emp.email = newEmail;
+    emp.teamLeader = newTL;
+    employees.sort((a,b)=>a.name.localeCompare(b.name));
+    closeModal('editEmployee');
+    editingEmpEmail = null;
+    renderStats(); renderTable();
+  }
+
+  // ── OFFBOARD EMPLOYEE ──
+  let offboardingEmpEmail = null;
+  function openOffboard(email){
+    const emp = employees.find(e=>e.email===email);
+    if (!emp) return;
+    offboardingEmpEmail = email;
+    const devs = devices.filter(d=>d.status==='assigned'&&d.assignedTo?.email===email);
+    document.getElementById('offboard-info').innerHTML = `
+      <div class="person-cell" style="margin-bottom:8px">
+        <div class="avatar">${initials(emp.name)}</div>
+        <div><strong>${escH(emp.name)}</strong><br>
+        <span style="color:var(--byd-grey);font-size:0.8rem">${escH(emp.email)}</span></div>
+      </div>
+      <span style="font-size:0.83rem;color:var(--byd-grey)">${devs.length} device${devs.length!==1?'s':''} currently assigned</span>
+    `;
+    openModal('offboard');
+  }
+
+  function confirmOffboard(){
+    const action = document.getElementById('offboard-devices-action').value;
+    const newStatus = action === 'broken' ? 'broken' : 'free';
+    devices.forEach(d=>{
+      if (d.status==='assigned' && d.assignedTo?.email===offboardingEmpEmail){
+        d.assignedTo = null;
+        d.status = newStatus;
+      }
+    });
+    employees = employees.filter(e=>e.email!==offboardingEmpEmail);
+    closeModal('offboard');
+    offboardingEmpEmail = null;
     renderStats(); renderTable();
   }
 
