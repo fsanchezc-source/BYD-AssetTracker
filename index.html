@@ -652,6 +652,7 @@
     document.getElementById('emp-email').value='';
     document.getElementById('emp-tl').value='';
     renderStats(); renderTable();
+    saveToSheet();
   }
 
   // ── EDIT EMPLOYEE ──
@@ -687,6 +688,7 @@
     closeModal('editEmployee');
     editingEmpEmail = null;
     renderStats(); renderTable();
+    saveToSheet();
   }
 
   // ── OFFBOARD EMPLOYEE ──
@@ -720,6 +722,7 @@
     closeModal('offboard');
     offboardingEmpEmail = null;
     renderStats(); renderTable();
+    saveToSheet();
   }
 
   // ── ADD DEVICE ──
@@ -756,6 +759,7 @@
     document.getElementById('dev-emp-wrap').style.display='none';
     selectedEmpEmail = null;
     renderStats(); renderTable();
+    saveToSheet();
   }
 
   // ── REASSIGN ──
@@ -829,6 +833,7 @@
     closeModal('reassign');
     reassignDeviceId=null; selectedEmpEmail=null;
     renderStats(); renderTable();
+    saveToSheet();
   }
 
   // ── ASSIGN FROM POOL ──
@@ -856,6 +861,109 @@
     closeModal('assign');
     assignDeviceId=null; selectedEmpEmail=null;
     renderStats(); renderTable();
+    saveToSheet();
+  }
+
+  // ── SAVE TO SHEET ──
+  // Converts internal device/employee state back to the flat row format the sheet expects
+  async function saveToSheet() {
+    setStatus('loading', 'Saving to Google Sheets...');
+
+    // Build flat rows: one row per device
+    // For each assigned device, try to group CPU+screens+headset under same employee row
+    // For pool/broken devices, each gets its own row with UNASSIGNED/BROKEN as email
+
+    // Group assigned devices by employee — pack CPU, screens, headset together per row
+    const empDevices = {};
+    employees.forEach(e => { empDevices[e.email] = { emp: e, cpu: null, screens: [], headset: null, extra: [] }; });
+
+    devices.filter(d => d.status === 'assigned').forEach(d => {
+      const key = d.assignedTo.email;
+      if (!empDevices[key]) empDevices[key] = { emp: d.assignedTo, cpu: null, screens: [], headset: null, extra: [] };
+      const g = empDevices[key];
+      if ((d.type === 'DESKTOP' || d.type === 'LAPTOP') && !g.cpu) g.cpu = d;
+      else if (d.type === 'SCREEN' && g.screens.length < 2) g.screens.push(d);
+      else if (d.type === 'HEADSET' && !g.headset) g.headset = d;
+      else g.extra.push(d);
+    });
+
+    const rows = [];
+
+    // Assigned rows
+    Object.values(empDevices).forEach(g => {
+      if (!g.cpu && g.screens.length === 0 && !g.headset && g.extra.length === 0) return;
+      rows.push({
+        'Name': g.emp.name || '',
+        'BYD Mail': g.emp.email || '',
+        'Team Leader': g.emp.teamLeader || '',
+        'S/N': g.cpu?.sn || '',
+        'Type': g.cpu?.type || '',
+        'Screen 1': g.screens[0]?.sn || '',
+        'Screen 2': g.screens[1]?.sn || '',
+        'Headset': g.headset?.sn || '',
+      });
+      // Extra devices get their own rows
+      g.extra.forEach(d => rows.push({
+        'Name': g.emp.name || '',
+        'BYD Mail': g.emp.email || '',
+        'Team Leader': g.emp.teamLeader || '',
+        'S/N': d.sn,
+        'Type': d.type,
+        'Screen 1': '', 'Screen 2': '', 'Headset': '',
+      }));
+    });
+
+    // Free devices
+    devices.filter(d => d.status === 'free').forEach(d => {
+      rows.push({
+        'Name': 'DEPOSIT',
+        'BYD Mail': 'UNASSIGNED',
+        'Team Leader': '',
+        'S/N': d.type === 'DESKTOP' || d.type === 'LAPTOP' ? d.sn : '',
+        'Type': d.type,
+        'Screen 1': d.type === 'SCREEN' ? d.sn : '',
+        'Screen 2': '',
+        'Headset': d.type === 'HEADSET' ? d.sn : '',
+      });
+    });
+
+    // Broken devices
+    devices.filter(d => d.status === 'broken').forEach(d => {
+      rows.push({
+        'Name': 'OFFICE',
+        'BYD Mail': 'BROKEN',
+        'Team Leader': '',
+        'S/N': d.type === 'DESKTOP' || d.type === 'LAPTOP' ? d.sn : '',
+        'Type': d.type,
+        'Screen 1': d.type === 'SCREEN' ? d.sn : '',
+        'Screen 2': '',
+        'Headset': d.type === 'HEADSET' ? d.sn : '',
+      });
+    });
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ rows }),
+      });
+      const json = await res.json();
+      if (json.status === 'ok') {
+        setStatus('ok', `Saved — ${json.written} rows written`);
+      } else {
+        throw new Error('Unexpected response');
+      }
+    } catch(err) {
+      setStatus('error', 'Save failed: ' + err.message);
+    }
+  }
+
+  // Helper: run action then save
+  function saveAfter(fn) {
+    return async function(...args) {
+      fn(...args);
+      await saveToSheet();
+    };
   }
 
   // ── BROKEN / RESTORE ──
@@ -864,12 +972,14 @@
     const d = findDevice(id);
     d.assignedTo=null; d.status='broken';
     renderStats(); renderTable();
+    saveToSheet();
   }
   function restoreDevice(id){
     if (!confirm('Restore this device to available pool?')) return;
     const d = findDevice(id);
     d.assignedTo=null; d.status='free';
     renderStats(); renderTable();
+    saveToSheet();
   }
 
   // ── EXPORT CSV ──
